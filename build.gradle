@@ -1,0 +1,8 @@
+apply plugin: 'java'
+apply plugin: 'jetty'
+apply plugin: 'maven'
+apply plugin: 'idea'
+
+task wrapper(type : Wrapper) {
+    gradleVersion = '1.4'
+}
