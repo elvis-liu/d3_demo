@@ -1,11 +1,11 @@
-var width = 960,
-    height = 600;
+var width = 960;
+var height = 600;
 
 var color = d3.scale.category20();
 
 var force = d3.layout.force()
-    .charge(-240)
-    .linkDistance(30)
+    .charge(-120)
+    .linkDistance(80)
     .on("tick", tick)
     .size([width, height]);
 
@@ -33,32 +33,42 @@ function tick() {
         });
 
     node.attr("cx", function (d) {
-        return d.x;
+        var x = d.x;
+        var r = d.name.length;
+        if (x - r < 0) x = r;
+        if (x + r >= width) x = width - r;
+        return x;
     })
         .attr("cy", function (d) {
-            return d.y;
+            var y = d.y;
+            var r = d.name.length;
+            if (y - r < 0) y = r;
+            if (y + r >= height) y = height - r;
+            return y;
         });
 }
 
 function toggleNode(n) {
-    if (removedNodes.hasOwnProperty(n)) {
-        delete removedNodes[n];
+    var key = n.name;
+    if (removedNodes.hasOwnProperty(key)) {
+        delete removedNodes[key];
     } else {
-        removedNodes[n] = true;
+        removedNodes[key] = true;
     }
     updateGraph(dataRoot);
 }
 
 function getValidNodes(nodes) {
-    return nodes.filter(function (d) {
-        return !removedNodes.hasOwnProperty(d);
-    });
+    return nodes;
+//        return nodes.filter(function (d) {
+//            return !removedNodes.hasOwnProperty(d.name);
+//        });
 }
 
 function getValidLinks(links) {
     return links.filter(function (l) {
         for (var n in removedNodes) {
-            if (n.group === l.target || n.group === l.source) {
+            if (n === l.target.name || n === l.source.name) {
                 return false;
             }
         }
@@ -70,12 +80,13 @@ function getValidLinks(links) {
 function updateGraph(root) {
     force
         .nodes(getValidNodes(root.nodes))
-        .links(root.links)
+        .links(getValidLinks(root.links))
         .start();
 
     link = svg.selectAll(".link")
-        .data(root.links)
-        .enter().append("line")
+        .data(getValidLinks(root.links));
+
+    link.enter().append("line")
         .attr("class", "link")
         .style("stroke-width", function (d) {
             return Math.sqrt(d.value);
@@ -84,8 +95,9 @@ function updateGraph(root) {
     link.exit().remove();
 
     node = svg.selectAll(".node")
-        .data(getValidNodes(root.nodes))
-        .enter().append("circle")
+        .data(getValidNodes(root.nodes));
+
+    node.enter().append("circle")
         .attr("class", "node")
         .attr("r", function (d) {
             return d.name.length;
